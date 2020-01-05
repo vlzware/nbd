@@ -1882,8 +1882,12 @@ bool setupexport(CLIENT* client) {
 				}
 			}
 			if(fi.fhandle == -1) {
-				if(multifile && i>0)
-					break;
+				if(multifile && i>0) {
+				    /* ENOENT "no such file" means just there are no more files to open */
+				    if (errno != ENOENT)
+				        err_nonfatal(strerror(errno));
+				    break;
+				}
 				error_string=g_strdup_printf(
 					"Could not open exported file %s: %%m",
 					tmpname);
@@ -3537,10 +3541,33 @@ void glib_message_syslog_redirect(const gchar *log_domain,
 }
 #endif
 
+#ifdef RAISE_RLIMIT_NOFILE
+/**
+ * Raise the limit of open files
+ **/
+#include <sys/resource.h>
+int set_limit_open_files() {
+    struct rlimit rl;
+    getrlimit(RLIMIT_NOFILE, &rl);
+    rl.rlim_cur = RAISE_RLIMIT_NOFILE;
+    if (setrlimit(RLIMIT_NOFILE, &rl)) {
+        strerror(errno);
+        return -1;
+    }
+    return 0;
+}
+#endif
+
 /**
  * Main entry point...
  **/
 int main(int argc, char *argv[]) {
+#ifdef RAISE_RLIMIT_NOFILE
+    if (set_limit_open_files()) {
+        exit(EXIT_FAILURE);
+    }
+#endif
+
 	SERVER *serve;
 	GArray *servers;
 	GError *gerr=NULL;

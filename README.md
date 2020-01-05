@@ -14,6 +14,14 @@ For compiling from git, do a checkout, install the SGML tools
 (docbook2man), and then run './autogen.sh' while inside your checkout.
 Then, see above.
 
+For compiling with support for bigger limit of open files (i.e. when using 
+lots of files with the "-m" option) pass the count to configure like this:
+
+    ./configure CFLAGS=-DRAISE_RLIMIT_NOFILE=100000
+
+followed by make/make install as usual. (For a Debian/Ubuntu compiled package
+ with the above setting look in the [patched](patched) folder.)
+
 Contributing
 ------------
 
